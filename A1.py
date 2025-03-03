@@ -15,27 +15,37 @@ def sigmoid(x):
 def ddx_sigmoid(output):
     return output * (1.0 - output)
 
+def softmax(x):
+    exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
+    return exp_x / np.sum(exp_x, axis=1, keepdims=True)
+
 class Layer:
   def __init__(self, in_size, out_size, actv, actv_name='sigmoid'):
     self.weights = np.random.randn(in_size, out_size)*0.01
     self.bias = np.zeros((1, output_size))
+    self.weight_momenta = np.zeros_like(self.weights)
+    self.bias_momenta = np.zeros_like(self.bias)
     self.actv = actv
     self.actv_name = actv_name
   def fore_prop(self, input):
     self.input = input
     self.z = np.dot(input, self.weights) + self.bias
-    if self.actv_name == 'sigmoid':
-       self.output = self.sigmoid(self.z)
-    else:
-       self.output = self.actv(self.z)
+    self.output = self.actv(self.z)
+    #if self.actv_name == 'sigmoid':
+       #self.output = self.sigmoid(self.z)
+    #else:
+       #self.output = self.actv(self.z)
     return self.output
   def back_prop(self, out_error, eta, optimizer):
     #in_grad = np.dot(out_grad, self.weights.T)
-    delta = out_error*ddx_sigmoid(self.output)
+    if self.actv_name == 'sigmoid':
+      delta = out_error*ddx_sigmoid(self.output)
+    else:
+      delta = out_error
     weight_grad = np.dot(self.input.T, delta)
     bias_grad = np.sum(delta, axis=0, keepdims=True)
-    self.weights, self.weight_momenta = optimizer.update(self.weights, weights_gradient, self.weight_momenta)
-    self.bias, self.bias_momenta = optimizer.update(self.bias, bias_gradient, self.bias_momenta)
+    self.weights, self.weight_momenta = optimizer.update(self.weights, weights_grad, self.weight_momenta)
+    self.bias, self.bias_momenta = optimizer.update(self.bias, bias_grad, self.bias_momenta)
     in_error = np.dot(delta, self.weights.T)
     return in_error
 class Optimizer:
@@ -78,9 +88,9 @@ class Adam(Optimizer):
 			momentum = [np.zeros_like(param), np.zeros_like(param)]
 		self.t += 1 #Time-steps
 		momentum[0] = self.beta1*momentum[0] + (1-self.beta1)*grad
-		momentum[1] = self.beta2*momentum + (1-seld.beta2)*np.square(grad)
-		dm = momentum[0]/(1-self.beta1**(self.t))
-		dv = momentum[1]/(1-self.beta2**self.t)
+		momentum[1] = self.beta2*momentum + (1-self.beta2)*np.square(grad)
+		dm = momentum[0]/(1-self.beta1**(self.t)) #Bias Corrections
+		dv = momentum[1]/(1-self.beta2**self.t)   #Bias Corrections
 		return param - self.eta*dm/(np.sqrt(dv) + self.epsilon), momentum
 class NAdam(Optimizer):
 	def update(self, param, grad, momentum):
@@ -88,7 +98,7 @@ class NAdam(Optimizer):
 			momentum = [np.zeros_like(param), np.zeros_like(param)]
 		self.t += 1 #Time-steps
 		momentum[0] = self.beta1*momentum[0] + (1-self.beta1)*grad
-		momentum[1] = self.beta2*momentum + (1-seld.beta2)*np.square(grad)
+		momentum[1] = self.beta2*momentum + (1-self.beta2)*np.square(grad)
 		dm = momentum[0]/(1-self.beta1**(self.t))
 		dv = momentum[1]/(1-self.beta2**self.t)
 		m_bar = (self.beta1*dm) + ((1-self.beta1)*grad/ (1-self.beta1**self.t))
@@ -98,9 +108,9 @@ class NN:
 		self.layers =[]
 		prev_size = in_size
 		for size in hidden:
-			self.layers.append(Layer(prev_size, size, self.sigmoid))
+			self.layers.append(Layer(prev_size, size, sigmoid, actv_name='sigmoid'))
 			prev_size = size
-		self.layers.append(Layer(prev_size, out_size, self.softmax))
+		self.layers.append(Layer(prev_size, out_size, softmax, actv_name='softmax')) #Last Layer
 		self.optimizer = optimizer
 	def fore_prop(self,X):
 		for layer in self.layers:
@@ -110,7 +120,7 @@ class NN:
 		output = self.fore_prop(X)
 		grad = output-y
 		for layer in reversed(self.layers):
-			gardient = layer.back_prop(grad, self.optimizer)
+			grad = layer.back_prop(grad, self.optimizer)
 	def train(self, X,y, epochs, batch):
 		for epoch in range(epochs):
 			for i in range(0, len(X), batch): 
