@@ -84,23 +84,31 @@ class RMSprop(Optimizer):
 		return param - self.eta*grad/(np.sqrt(momentum) + self.epsilon) ,momentum
 class Adam(Optimizer):
 	def update(self, param, grad, momentum):
-		if momentum is None:
-			momentum = [np.zeros_like(param), np.zeros_like(param)]
+		if isinstance(momentum,list):
+			m,v = momentum
+		else:
+			m = np.zeros_like(param)
+			v = np.zeros_like(param)
+			momentum = [m,v]
 		self.t += 1 #Time-steps
-		momentum[0] = self.beta1*momentum[0] + (1-self.beta1)*grad
-		momentum[1] = self.beta2*momentum + (1-self.beta2)*np.square(grad)
-		dm = momentum[0]/(1-self.beta1**(self.t)) #Bias Corrections
-		dv = momentum[1]/(1-self.beta2**self.t)   #Bias Corrections
+		m = self.beta1*m + (1-self.beta1)*grad
+		v = self.beta2*v + (1-self.beta2)*np.square(grad)
+		dm = m/(1-self.beta1**(self.t)) #Bias Corrections
+		dv = v/(1-self.beta2**self.t)   #Bias Corrections
 		return param - self.eta*dm/(np.sqrt(dv) + self.epsilon), momentum
 class NAdam(Optimizer):
 	def update(self, param, grad, momentum):
-		if momentum is None:
-			momentum = [np.zeros_like(param), np.zeros_like(param)]
+		if isinstance(momentum,list):
+			m,v = momentum
+		else:
+			m = np.zeros_like(param)
+			v = np.zeros_like(param)
+			momentum = [m,v]
 		self.t += 1 #Time-steps
-		momentum[0] = self.beta1*momentum[0] + (1-self.beta1)*grad
-		momentum[1] = self.beta2*momentum + (1-self.beta2)*np.square(grad)
-		dm = momentum[0]/(1-self.beta1**(self.t))
-		dv = momentum[1]/(1-self.beta2**self.t)
+		m = self.beta1*m + (1-self.beta1)*grad
+		v = self.beta2*v + (1-self.beta2)*np.square(grad)
+		dm = m/(1-self.beta1**(self.t))
+		dv = v/(1-self.beta2**self.t)
 		m_bar = (self.beta1*dm) + ((1-self.beta1)*grad/ (1-self.beta1**self.t))
 		return param - self.eta*m_bar / (np.sqrt(dv) + self.epsilon), momentum
 class NN:
