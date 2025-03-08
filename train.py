@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import argparse
+from A1 import *
 
 def parse_args():
     parser = argparse.ArgumentParser(description='To train network')
