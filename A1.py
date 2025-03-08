@@ -2,14 +2,19 @@ import numpy as np
 import pandas as pd
 from keras.datasets import fashion_mnist
 
-(X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
-X_train = X_train.reshape(X_train.shape[0],-1)/255 #Normalizing image data
-X_test = X_test.reshape(X_test.shape[0],-1)/255 #Normalizing image data
-y_train = pd.get_dummies(y_train).values #Encode targets as one-hot encodings to implement softmax
-y_test = pd.get_dummies(y_test).values #Encode targets as one-hot encodings to implement softmax
+def load_data(dataset_name):
+	if dataset_name = 'mnist':
+		(X_train,y_train), (X_test,y_test) = mnist.load_data()
+	elif dataset_name = 'fashion_mnist':
+		(X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
+	X_train = X_train.reshape(X_train.shape[0],-1)/255 #Normalizing image data
+	X_test = X_test.reshape(X_test.shape[0],-1)/255 #Normalizing image data
+	y_train = pd.get_dummies(y_train).values #Encode targets as one-hot encodings to implement softmax
+	y_test = pd.get_dummies(y_test).values #Encode targets as one-hot encodings to implement softmax
+	return X_train, y_train, X_test, y_test
 
 def sigmoid(x):
-    # Numerically stable sigmoid
+    # Numerically stable sigmoid by limiting values
     return 1 / (1 + np.exp(-np.clip(x, -500, 500)))
 
 def ddx_sigmoid(output):
@@ -19,37 +24,67 @@ def softmax(x):
     exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
     return exp_x / np.sum(exp_x, axis=1, keepdims=True)
 
+def identity(x):
+	return(x)
+def ddx_identity(output):
+	return np.ones_like(output)
+
+def tanh(x):
+	return np.tanh(x)
+def ddx_tanh(output):
+	return 1 - output**2
+
+def relu(x):
+	return np.maximum(0,x)
+def ddx_relu(x):
+	return (x>0).astype(float)
+
+
 class Layer:
-  def __init__(self, in_size, out_size, actv, actv_name='sigmoid'):
-    self.weights = np.random.randn(in_size, out_size)*0.01
+  def __init__(self, in_size, out_size, actv, actv_name='sigmoid', weight_init = 'random'):
     self.bias = np.zeros((1, output_size))
     self.weight_momenta = np.zeros_like(self.weights)
     self.bias_momenta = np.zeros_like(self.bias)
     self.actv = actv
     self.actv_name = actv_name
+    if weight_init == 'random':
+	    self.weights = np.random.randn(in_size, out_size)*0.01
+    elif weight_init == 'xavier':
+	    self.weights = np.random.randn(in_size, out_size)*np.sqrt(2/(in_size + out_size)) #Denominator sets Xavier Scale
   def fore_prop(self, input):
     self.input = input
     self.z = np.dot(input, self.weights) + self.bias
-    self.output = self.actv(self.z)
-    #if self.actv_name == 'sigmoid':
-       #self.output = self.sigmoid(self.z)
-    #else:
+    #self.output = self.actv(self.z)
+    if self.actv_name == 'sigmoid':
+	    self.output = sigmoid(self.z)
+    elif self.actv_name == 'tanh':
+	    self.output = tanh(self.z)
+    elif self.actv_name == 'relu':
+	    self.output = relu(self.z)
+    elif self.actv_name == 'identity':
+	    self.output = identity(self.z)
        #self.output = self.actv(self.z)
     return self.output
-  def back_prop(self, out_error, eta, optimizer):
+  def back_prop(self, out_error, optimizer):
     #in_grad = np.dot(out_grad, self.weights.T)
     if self.actv_name == 'sigmoid':
       delta = out_error*ddx_sigmoid(self.output)
-    else:
-      delta = out_error
+    elif self.actv_name == 'tanh'
+      delta = out_error*ddx_tanh(self.output)
+    elif self.actv_name == 'relu':
+      delta = out_error*ddx_relu(self.output)
+    elif self.actv_name == 'identity':
+      delta = out_error*ddx_identity(self.output)
     weight_grad = np.dot(self.input.T, delta)
     bias_grad = np.sum(delta, axis=0, keepdims=True)
-    self.weights, self.weight_momenta = optimizer.update(self.weights, weights_grad, self.weight_momenta)
+    if optimizer.weight_decay > 0:
+	    weight_grad += optimizer.weight_decay*self.weights
+    self.weights, self.weight_momenta = optimizer.update(self.weights, weight_grad, self.weight_momenta)
     self.bias, self.bias_momenta = optimizer.update(self.bias, bias_grad, self.bias_momenta)
     in_error = np.dot(delta, self.weights.T)
     return in_error
 class Optimizer:
-  def __init__(self, eta, momentum = 0.9, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8):
+  def __init__(self, eta, momentum = 0.9, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8, weight_decay = 0):
     self.eta = eta
     self.momentum = momentum
     self.beta1 = beta1
@@ -112,8 +147,9 @@ class NAdam(Optimizer):
 		m_bar = (self.beta1*dm) + ((1-self.beta1)*grad/ (1-self.beta1**self.t))
 		return param - self.eta*m_bar / (np.sqrt(dv) + self.epsilon), momentum
 class NN:
-	def __init__(self, in_size, hidden, out_size, optimizer):
+	def __init__(self, in_size, hidden, out_size, actv, weight_init, loss_name, optimizer):
 		self.layers =[]
+		self.loss = loss
 		prev_size = in_size
 		for size in hidden:
 			self.layers.append(Layer(prev_size, size, sigmoid, actv_name='sigmoid'))
@@ -126,29 +162,30 @@ class NN:
 		return X
 	def back_prop(self, X,y):
 		output = self.fore_prop(X)
-		grad = output-y
+		if self.loss_name == 'cross_entropy':
+			grad = output - y #For BCE loss, output - target = loss
+		if self.loss_name == 'mean_squared_error':
+			grad = 2*(output - y)
 		for layer in reversed(self.layers):
 			grad = layer.back_prop(grad, self.optimizer)
-	def train(self, X,y, epochs, batch):
-		for epoch in range(epochs):
-			for i in range(0, len(X), batch): 
-				x_batch = X[i:i+batch]
-				y_batch = y[i:i+batch]
-				self.back_prop(X_batch, y_batch)
-			if epoch%10==0: #To print accuracy every 10 epochs
-				acc = np.mean(np.argmax(self.fore_prop(X), axis=1) == np.argmax(y, axis=1)) #Create truth boolean & Take average
-				print(f"Epoch {epoch}, Accuracy: {acc:.4f}")
+	#def train(self, X,y, epochs, batch):
+		#for epoch in range(epochs):
+			#for i in range(0, len(X), batch): 
+				#x_batch = X[i:i+batch]
+				#y_batch = y[i:i+batch]
+				#self.back_prop(X_batch, y_batch)
+			#if epoch%10==0: #To print accuracy every 10 epochs
+				#acc = np.mean(np.argmax(self.fore_prop(X), axis=1) == np.argmax(y, axis=1)) #Create truth boolean & Take average
+				#print(f"Epoch {epoch}, Accuracy: {acc:.4f}")
+	def calc_loss(self, X,y):
+		output = self.fore_prop(X)
+		if self.loss_name == 'cross_entropy':
+			loss = -np.mean(np.sum(y*np.log(output + 1e-8), axis=1)) #epsilon to avoid log(0)
+		elif self.loss_name == 'mean_squared_error':
+			loss = np.mean(np.sum(np.square(output-y), axis =1))
+		return loss
 	def predict(self,X):
 		return self.fore_prop(X)
-#Implementation
-in_size = 784
-hidden = [64,64] #2 layers with 64 neurons each
-out_size = 10 #10 classes of Fashion_MNIST
-optimizer = SGD(eta=0.001)
-nn = NN(in_size,hidden,out_size,optimizer)
-nn.train(X_train, y_train, epochs=100, batch=32)
-test_acc = np.mean(np.argmax(nn.predict(X_test), axis=1) == np.argmax(y_test, axis=1))
-print(f"Test Accuracy: {test_acc:.4f}")
 	
 		
     
