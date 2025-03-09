@@ -77,22 +77,22 @@ def parse_args():
 
     # Create optimizer
     if args.optimizer == 'sgd':
-        optimizer = SGD(learning_rate=args.learning_rate, weight_decay=args.weight_decay)
+        optimizer = SGD(eta=args.learning_rate, weight_decay=args.weight_decay)
     elif args.optimizer == 'momentum':
-        optimizer = MomentumGD(learning_rate=args.learning_rate, momentum=args.momentum,
+        optimizer = MomentumGD(eta=args.learning_rate, momentum=args.momentum,
                               weight_decay=args.weight_decay)
     elif args.optimizer == 'nag':
-        optimizer = NAGD(learning_rate=args.learning_rate, momentum=args.momentum,
+        optimizer = NAGD(eta=args.learning_rate, momentum=args.momentum,
                        weight_decay=args.weight_decay)
     elif args.optimizer == 'rmsprop':
-        optimizer = RMSprop(learning_rate=args.learning_rate, beta=args.beta,
+        optimizer = RMSprop(eta=args.learning_rate, beta=args.beta,
                           epsilon=args.epsilon, weight_decay=args.weight_decay)
     elif args.optimizer == 'adam':
-        optimizer = Adam(learning_rate=args.learning_rate, beta1=args.beta1,
+        optimizer = Adam(eta=args.learning_rate, beta1=args.beta1,
                        beta2=args.beta2, epsilon=args.epsilon,
                        weight_decay=args.weight_decay)
     elif args.optimizer == 'nadam':
-        optimizer = NAdam(learning_rate=args.learning_rate, beta1=args.beta1,
+        optimizer = NAdam(eta=args.learning_rate, beta1=args.beta1,
                         beta2=args.beta2, epsilon=args.epsilon,
                         weight_decay=args.weight_decay)
 
@@ -122,7 +122,7 @@ def parse_args():
         for i in range(0, len(X_train), args.batch_size):
             X_batch = X_train_shuffled[i:i+args.batch_size]
             y_batch = y_train_shuffled[i:i+args.batch_size]
-            nn.backward(X_batch, y_batch)
+            nn.back_prop(X_batch, y_batch)
 
         # Calculate loss and accuracy on train and test sets
         train_loss = nn.calc_loss(X_train, y_train)
