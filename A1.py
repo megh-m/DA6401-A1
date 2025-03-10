@@ -81,7 +81,7 @@ class Layer:
     bias_grad = np.sum(delta, axis=0, keepdims=True)
     if optimizer.weight_decay > 0:
 	    weight_grad += optimizer.weight_decay*self.weights
-    self.weights, self.weight_momenta = optimizer.update(self.weights, weight_grad, self.weight_momenta)
+    self.weights, self.weight_momenta = optimizer.update(self.weights, weight_grad, self.weight_momenta) #Optimizer returns weights & momenta
     self.bias, self.bias_momenta = optimizer.update(self.bias, bias_grad, self.bias_momenta)
     in_error = np.dot(delta, self.weights.T)
     return in_error
@@ -97,52 +97,52 @@ class Optimizer:
     self.weight_decay = weight_decay
     self.t = 0
     
-  def update(self, param, grad, momentum):
+  def update(self, weights, grad, momentum):#is essentially updating the weights as per gradient and gradient descent scheme
     raise NotImplementedError
 
 class SGD(Optimizer):
-	def update(self, param, grad, momentum):
-		return param - self.eta*grad, None
+	def update(self, weights, grad, momentum):
+		return weights - self.eta*grad, None
 class MomentumGD(Optimizer):
-	def update(self, param, grad, momentum):
+	def update(self, weights, grad, momentum):
 		if momentum is None:
-			momentum = np.zeros_like(param)
+			momentum = np.zeros_like(weights)
 		momentum = self.momentum*momentum + self.eta*grad
-		return param - momentum, momentum
+		return weights - momentum, momentum
 class NAGD(Optimizer):
-	def update(self, param, grad, momentum):
+	def update(self, weights, grad, momentum):
 		if momentum is None:
-			momentum = np.zeros_like(param)
+			momentum = np.zeros_like(weights)
 		old_momentum = momentum
 		momentum = self.momentum*momentum + self.eta*grad
-		return param - (1 + self.momentum) * momentum + self.momentum*old_momentum, momentum
+		return weights - (1 + self.momentum) * momentum + self.momentum*old_momentum, momentum
 class RMSprop(Optimizer):
-	def update(self, param, grad, momentum):
+	def update(self, weights, grad, momentum):
 		if momentum is None:
-			momentum = np.zeros_like(param)
+			momentum = np.zeros_like(weights)
 		momentum = self.beta*momentum + (1-self.beta)*np.square(grad)
-		return param - self.eta*grad/(np.sqrt(momentum) + self.epsilon) ,momentum
+		return weights - self.eta*grad/(np.sqrt(momentum) + self.epsilon) ,momentum
 class Adam(Optimizer):
-	def update(self, param, grad, momentum):
+	def update(self, weights, grad, momentum):
 		if isinstance(momentum,list):
 			m,v = momentum
 		else:
-			m = np.zeros_like(param)
-			v = np.zeros_like(param)
+			m = np.zeros_like(weights)
+			v = np.zeros_like(weights)
 			momentum = [m,v]
 		self.t += 1 #Time-steps
 		m = self.beta1*m + (1-self.beta1)*grad
 		v = self.beta2*v + (1-self.beta2)*np.square(grad)
 		dm = m/(1-self.beta1**(self.t)) #Bias Corrections
 		dv = v/(1-self.beta2**self.t)   #Bias Corrections
-		return param - self.eta*dm/(np.sqrt(dv) + self.epsilon), momentum
+		return weights - self.eta*dm/(np.sqrt(dv) + self.epsilon), momentum
 class NAdam(Optimizer): #Is essentially same as Adam but with Nesterov-like acceleration
-	def update(self, param, grad, momentum):
+	def update(self, weights, grad, momentum):
 		if isinstance(momentum,list):
 			m,v = momentum
 		else:
-			m = np.zeros_like(param)
-			v = np.zeros_like(param)
+			m = np.zeros_like(weights)
+			v = np.zeros_like(weights)
 			momentum = [m,v]
 		self.t += 1 #Time-steps
 		m = self.beta1*m + (1-self.beta1)*grad
@@ -150,7 +150,7 @@ class NAdam(Optimizer): #Is essentially same as Adam but with Nesterov-like acce
 		dm = m/(1-self.beta1**(self.t))
 		dv = v/(1-self.beta2**self.t)
 		m_bar = (self.beta1*dm) + ((1-self.beta1)*grad/ (1-self.beta1**self.t)) #Nesterov Acceleration
-		return param - self.eta*m_bar / (np.sqrt(dv) + self.epsilon), momentum
+		return weights - self.eta*m_bar / (np.sqrt(dv) + self.epsilon), momentum
 class NN:
 	def __init__(self, in_size, hidden, out_size, actv, weight_init, loss, optimizer):
 		self.layers =[]
@@ -166,14 +166,14 @@ class NN:
 			X=layer.fore_prop(X)
 		output = softmax(X) #softmax layer
 		return output
-	def back_prop(self, X,y):
-		output = self.fore_prop(X)
+	def back_prop(self, X,y #To start gradient calculation from the last layer
+		output = self.fore_prop(X) #Input-Output layer propagated output
 		if self.loss_name == 'cross_entropy':
 			grad = output - y #For BCE loss, output - target = loss
 		if self.loss_name == 'mean_squared_error':
 			grad = 2*(output - y)
 		for layer in reversed(self.layers):
-			grad = layer.back_prop(grad, self.optimizer) #Back-Pass thru Layers
+			grad = layer.back_prop(grad, self.optimizer) #Back-Pass thru Layers and update gradient value i.e. undergo gradient descent as per optimizer
 
 	def calc_loss(self, X,y):
 		output = self.fore_prop(X)
