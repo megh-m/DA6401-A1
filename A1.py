@@ -13,6 +13,7 @@ def load_data(dataset_name):
 	y_test = pd.get_dummies(y_test).values #Encode targets as one-hot encodings to implement softmax
 	return X_train, y_train, X_test, y_test
 
+#Defining all activation functions globally
 def sigmoid(x):
     # Numerically stable sigmoid by limiting values
     return 1 / (1 + np.exp(-np.clip(x, -500, 500)))
@@ -41,20 +42,21 @@ def ddx_relu(x):
 
 
 class Layer:
-  def __init__(self, in_size, out_size, actv, actv_name='sigmoid', weight_init = 'random'):
+  def __init__(self, in_size, out_size, actv, weight_init = 'random'):
+    self.in_size = in_size
+    self.out_size = out_size
     self.bias = np.zeros((1, output_size))
-    self.weight_momenta = np.zeros_like(self.weights)
-    self.bias_momenta = np.zeros_like(self.bias)
-    self.actv = actv
-    self.actv_name = actv_name
+    self.actv_name = actv
     if weight_init == 'random':
 	    self.weights = np.random.randn(in_size, out_size)*0.01
     elif weight_init == 'xavier':
 	    self.weights = np.random.randn(in_size, out_size)*np.sqrt(2/(in_size + out_size)) #Denominator sets Xavier Scale
+    self.weight_momenta = np.zeros_like(self.weights)
+    self.bias_momenta = np.zeros_like(self.bias)
+  
   def fore_prop(self, input):
     self.input = input
     self.z = np.dot(input, self.weights) + self.bias
-    #self.output = self.actv(self.z)
     if self.actv_name == 'sigmoid':
 	    self.output = sigmoid(self.z)
     elif self.actv_name == 'tanh':
@@ -63,10 +65,9 @@ class Layer:
 	    self.output = relu(self.z)
     elif self.actv_name == 'identity':
 	    self.output = identity(self.z)
-       #self.output = self.actv(self.z)
     return self.output
+  
   def back_prop(self, out_error, optimizer):
-    #in_grad = np.dot(out_grad, self.weights.T)
     if self.actv_name == 'sigmoid':
       delta = out_error*ddx_sigmoid(self.output)
     elif self.actv_name == 'tanh'
@@ -75,6 +76,7 @@ class Layer:
       delta = out_error*ddx_relu(self.output)
     elif self.actv_name == 'identity':
       delta = out_error*ddx_identity(self.output)
+    in_grad = np.dot(out_grad, self.weights.T)
     weight_grad = np.dot(self.input.T, delta)
     bias_grad = np.sum(delta, axis=0, keepdims=True)
     if optimizer.weight_decay > 0:
@@ -83,13 +85,16 @@ class Layer:
     self.bias, self.bias_momenta = optimizer.update(self.bias, bias_grad, self.bias_momenta)
     in_error = np.dot(delta, self.weights.T)
     return in_error
+	  
 class Optimizer:
-  def __init__(self, eta, momentum = 0.9, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8, weight_decay = 0):
+  def __init__(self, eta, momentum = 0.9, beta=0.9, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8, weight_decay = 0):
     self.eta = eta
     self.momentum = momentum
+    self.beta = beta
     self.beta1 = beta1
     self.beta2 = beta2
     self.epsilon = epsilon
+    self.weight_decay = weight_decay
     self.t = 0
     
   def update(self, param, grad, momentum):
@@ -115,7 +120,7 @@ class RMSprop(Optimizer):
 	def update(self, param, grad, momentum):
 		if momentum is None:
 			momentum = np.zeros_like(param)
-		momentum = self.beta1*momentum + (1-self.beta1)*np.square(grad)
+		momentum = self.beta*momentum + (1-self.beta)*np.square(grad)
 		return param - self.eta*grad/(np.sqrt(momentum) + self.epsilon) ,momentum
 class Adam(Optimizer):
 	def update(self, param, grad, momentum):
@@ -131,7 +136,7 @@ class Adam(Optimizer):
 		dm = m/(1-self.beta1**(self.t)) #Bias Corrections
 		dv = v/(1-self.beta2**self.t)   #Bias Corrections
 		return param - self.eta*dm/(np.sqrt(dv) + self.epsilon), momentum
-class NAdam(Optimizer):
+class NAdam(Optimizer): #Is essentially same as Adam but with Nesterov-like acceleration
 	def update(self, param, grad, momentum):
 		if isinstance(momentum,list):
 			m,v = momentum
@@ -144,22 +149,23 @@ class NAdam(Optimizer):
 		v = self.beta2*v + (1-self.beta2)*np.square(grad)
 		dm = m/(1-self.beta1**(self.t))
 		dv = v/(1-self.beta2**self.t)
-		m_bar = (self.beta1*dm) + ((1-self.beta1)*grad/ (1-self.beta1**self.t))
+		m_bar = (self.beta1*dm) + ((1-self.beta1)*grad/ (1-self.beta1**self.t)) #Nesterov Acceleration
 		return param - self.eta*m_bar / (np.sqrt(dv) + self.epsilon), momentum
 class NN:
-	def __init__(self, in_size, hidden, out_size, actv, weight_init, loss_name, optimizer):
+	def __init__(self, in_size, hidden, out_size, actv, weight_init, loss, optimizer):
 		self.layers =[]
-		self.loss = loss
+		self.loss_name = loss
 		prev_size = in_size
 		for size in hidden:
-			self.layers.append(Layer(prev_size, size, sigmoid, actv_name='sigmoid'))
+			self.layers.append(Layer(prev_size, size, actv, weight_init=weight_init ))
 			prev_size = size
-		self.layers.append(Layer(prev_size, out_size, softmax, actv_name='softmax')) #Last Layer
+		self.layers.append(Layer(prev_size, out_size, actv, weight_init=weight_init)) #Last Layer before softmax layer
 		self.optimizer = optimizer
 	def fore_prop(self,X):
 		for layer in self.layers:
 			X=layer.fore_prop(X)
-		return X
+		output = softmax(X) #softmax layer
+		return output
 	def back_prop(self, X,y):
 		output = self.fore_prop(X)
 		if self.loss_name == 'cross_entropy':
@@ -167,16 +173,8 @@ class NN:
 		if self.loss_name == 'mean_squared_error':
 			grad = 2*(output - y)
 		for layer in reversed(self.layers):
-			grad = layer.back_prop(grad, self.optimizer)
-	#def train(self, X,y, epochs, batch):
-		#for epoch in range(epochs):
-			#for i in range(0, len(X), batch): 
-				#x_batch = X[i:i+batch]
-				#y_batch = y[i:i+batch]
-				#self.back_prop(X_batch, y_batch)
-			#if epoch%10==0: #To print accuracy every 10 epochs
-				#acc = np.mean(np.argmax(self.fore_prop(X), axis=1) == np.argmax(y, axis=1)) #Create truth boolean & Take average
-				#print(f"Epoch {epoch}, Accuracy: {acc:.4f}")
+			grad = layer.back_prop(grad, self.optimizer) #Back-Pass thru Layers
+
 	def calc_loss(self, X,y):
 		output = self.fore_prop(X)
 		if self.loss_name == 'cross_entropy':
@@ -184,7 +182,8 @@ class NN:
 		elif self.loss_name == 'mean_squared_error':
 			loss = np.mean(np.sum(np.square(output-y), axis =1))
 		return loss
-	def predict(self,X):
+	
+	def predict(self,X): #To be used after training is complete
 		return self.fore_prop(X)
 	
 		
