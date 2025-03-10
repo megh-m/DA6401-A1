@@ -3,9 +3,9 @@ import pandas as pd
 from keras.datasets import fashion_mnist
 
 def load_data(dataset_name):
-	if dataset_name = 'mnist':
+	if dataset_name == 'mnist':
 		(X_train,y_train), (X_test,y_test) = mnist.load_data()
-	elif dataset_name = 'fashion_mnist':
+	elif dataset_name == 'fashion_mnist':
 		(X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
 	X_train = X_train.reshape(X_train.shape[0],-1)/255 #Normalizing image data
 	X_test = X_test.reshape(X_test.shape[0],-1)/255 #Normalizing image data
@@ -70,7 +70,7 @@ class Layer:
   def back_prop(self, out_error, optimizer):
     if self.actv_name == 'sigmoid':
       delta = out_error*ddx_sigmoid(self.output)
-    elif self.actv_name == 'tanh'
+    elif self.actv_name == 'tanh':
       delta = out_error*ddx_tanh(self.output)
     elif self.actv_name == 'relu':
       delta = out_error*ddx_relu(self.output)
