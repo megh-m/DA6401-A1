@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import argparse
+import wandb
 from A1 import *
 
 def parse_args():
