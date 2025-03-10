@@ -35,9 +35,9 @@ def parse_args():
                         help='Optimizer used to train neural network.')
     
     # Optimizer parameters
-    parser.add_argument('-lr', '--learning_rate', type=float, default=0.00807,
+    parser.add_argument('-lr', '--learning_rate', type=float, default=0.0057,
                         help='Learning rate used to optimize model parameters')
-    parser.add_argument('-m', '--momentum', type=float, default=0.875,
+    parser.add_argument('-m', '--momentum', type=float, default=0.807,
                         help='Momentum used by momentum and nag optimizers.')
     parser.add_argument('-beta', '--beta', type=float, default=0.9,
                         help='Beta used by rmsprop optimizer')
