@@ -62,7 +62,7 @@ def parse_args():
                         help='Activation function used in hidden layers.')
     
     return parser.parse_args()
-    def main():
+def main():
     args = parse_args()
 
     # Initializing wandb
