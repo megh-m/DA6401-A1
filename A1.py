@@ -45,7 +45,7 @@ class Layer:
   def __init__(self, in_size, out_size, actv, weight_init = 'random'):
     self.in_size = in_size
     self.out_size = out_size
-    self.bias = np.zeros((1, output_size))
+    self.bias = np.zeros((1, out_size))
     self.actv_name = actv
     if weight_init == 'random':
 	    self.weights = np.random.randn(in_size, out_size)*0.01
@@ -76,7 +76,7 @@ class Layer:
       delta = out_error*ddx_relu(self.output)
     elif self.actv_name == 'identity':
       delta = out_error*ddx_identity(self.output)
-    in_grad = np.dot(out_grad, self.weights.T)
+    in_grad = np.dot(out_error, self.weights.T)
     weight_grad = np.dot(self.input.T, delta)
     bias_grad = np.sum(delta, axis=0, keepdims=True)
     if optimizer.weight_decay > 0:
