@@ -21,7 +21,7 @@ def parse_args():
     # Training parameters
     parser.add_argument('-e', '--epochs', type=int, default=20,
                         help='Number of epochs to train neural network.')
-    parser.add_argument('-b', '--batch_size', type=int, default=32,
+    parser.add_argument('-b', '--batch_size', type=int, default=128,
                         help='Batch size used to train neural network.')
     
     # Loss function
@@ -30,14 +30,14 @@ def parse_args():
                         help='Loss function used to train neural network.')
     
     # Optimizer
-    parser.add_argument('-o', '--optimizer', type=str, default='adam',
+    parser.add_argument('-o', '--optimizer', type=str, default='rmsprop',
                         choices=["sgd", "momentum", "nesterov", "rmsprop", "adam", "nadam"],
                         help='Optimizer used to train neural network.')
     
     # Optimizer parameters
-    parser.add_argument('-lr', '--learning_rate', type=float, default=0.01,
+    parser.add_argument('-lr', '--learning_rate', type=float, default=0.00807,
                         help='Learning rate used to optimize model parameters')
-    parser.add_argument('-m', '--momentum', type=float, default=0.9,
+    parser.add_argument('-m', '--momentum', type=float, default=0.875,
                         help='Momentum used by momentum and nag optimizers.')
     parser.add_argument('-beta', '--beta', type=float, default=0.9,
                         help='Beta used by rmsprop optimizer')
@@ -51,10 +51,10 @@ def parse_args():
                         help='Weight decay used by optimizers.')
     
     # Model architecture
-    parser.add_argument('-w_i', '--weight_init', type=str, default='random',
-                        choices=["random", "Xavier"],
+    parser.add_argument('-w_i', '--weight_init', type=str, default='xavier',
+                        choices=["random", "xavier"],
                         help='Weight initialization method.')
-    parser.add_argument('-nhl', '--num_layers', type=int, default=3,
+    parser.add_argument('-nhl', '--num_layers', type=int, default=2,
                         help='Number of hidden layers used in feedforward neural network.')
     parser.add_argument('-sz', '--hidden_size', type=int, default=64,
                         help='Number of hidden neurons in a feedforward layer.')
