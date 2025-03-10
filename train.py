@@ -159,7 +159,7 @@ def main():
     # Log final metrics
     wandb.log({
         "final_train_accuracy": final_train_accuracy,
-        "final_validation_accuracy": final_test_accuracy
+        "final_validation_accuracy": final_test_accuracy,
         "final_train_loss": train_loss,
         "final_test_loss": test_loss
     })
