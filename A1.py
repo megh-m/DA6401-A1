@@ -70,7 +70,7 @@ class Layer: #Define a layer instead of individual neurons
   
   def back_prop(self, out_error, optimizer):
     if self.actv_name == 'sigmoid':
-      delta = out_error*ddx_sigmoid(self.output)
+      delta = out_error*ddx_sigmoid(self.output) #Element-wise multiplication of gradient of Loss from fore_prop and derivatives of activation functions
     elif self.actv_name == 'tanh':
       delta = out_error*ddx_tanh(self.output)
     elif self.actv_name == 'relu':
@@ -78,7 +78,7 @@ class Layer: #Define a layer instead of individual neurons
     elif self.actv_name == 'identity':
       delta = out_error*ddx_identity(self.output)
     in_grad = np.dot(out_error, self.weights.T)
-    weight_grad = np.dot(self.input.T, delta)
+    weight_grad = np.dot(self.input.T, delta) #Final step of finding gradient wrt weights (delta stays same for weights and bias)
     bias_grad = np.sum(delta, axis=0, keepdims=True)
     if optimizer.weight_decay > 0:
 	    weight_grad += optimizer.weight_decay*self.weights
