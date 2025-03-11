@@ -41,7 +41,7 @@ def ddx_relu(x):
 	return (x>0).astype(float)
 
 
-class Layer:
+class Layer: #Define a layer instead of individual neurons
   def __init__(self, in_size, out_size, actv, weight_init = 'random'):
     self.in_size = in_size
     self.out_size = out_size
@@ -56,7 +56,8 @@ class Layer:
   
   def fore_prop(self, input):
     self.input = input
-    self.z = np.dot(input, self.weights) + self.bias
+    self.z = np.dot(input, self.weights) + self.bias #Aggregator Step
+    #Activation Steps
     if self.actv_name == 'sigmoid':
 	    self.output = sigmoid(self.z)
     elif self.actv_name == 'tanh':
