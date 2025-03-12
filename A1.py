@@ -77,7 +77,7 @@ class Layer: #Define a layer instead of individual neurons
       delta = out_error*ddx_relu(self.output)
     elif self.actv_name == 'identity':
       delta = out_error*ddx_identity(self.output)
-    in_grad = np.dot(out_error, self.weights.T)
+    
     weight_grad = np.dot(self.input.T, delta) #Final step of finding gradient wrt weights (delta stays same for weights and bias)
     bias_grad = np.sum(delta, axis=0, keepdims=True)
     if optimizer.weight_decay > 0:
