@@ -14,12 +14,12 @@ train.py takes in the following arguments
 -o, --optimizer	sgd	choices: ["sgd", "momentum", "nag", "rmsprop", "adam", "nadam"]
 -lr, --learning_rate	0.1
 -m, --momentum	0.5	
--beta, --beta	0.5	Beta used by rmsprop optimizer
--beta1, --beta1	0.5	Beta1 used by adam and nadam optimizers.
--beta2, --beta2	0.5	Beta2 used by adam and nadam optimizers.
--eps, --epsilon	0.000001	Epsilon used by optimizers.
--w_d, --weight_decay	.0	Weight decay used by optimizers.
--w_i, --weight_init	random	choices: ["random", "Xavier"]
--nhl, --num_layers	1	Number of hidden layers used in feedforward neural network.
--sz, --hidden_size	4	Number of hidden neurons in a feedforward layer.
+-beta, --beta	0.5	
+-beta1, --beta1	0.5
+-beta2, --beta2	0.5	
+-eps, --epsilon	0.000001	
+-w_d, --weight_decay	.0	
+-w_i, --weight_init	random	choices: 
+-nhl, --num_layers	
+-sz, --hidden_size
 -a, --activation	sigmoid	choices: ["identity", "sigmoid", "tanh", "ReLU"]
