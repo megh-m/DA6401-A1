@@ -4,16 +4,16 @@ from A1.py import * to train.py. Save both in same directory
 Use requirements.txt to get necessary packages. use pip install -r requirements.txt 
 More details in attached report, available at https://api.wandb.ai/links/megh_m-iit-madras/yggk5zqd
 train.py takes in the following arguments
-Name	Default Value	Description
--wp, --wandb_project	myprojectname	Project name used to track experiments in Weights & Biases dashboard
--we, --wandb_entity	myname	Wandb Entity used to track experiments in the Weights & Biases dashboard.
+
+-wp, --wandb_project	myprojectname 
+-we, --wandb_entity	myname	
 -d, --dataset	fashion_mnist	choices: ["mnist", "fashion_mnist"]
--e, --epochs	1	Number of epochs to train neural network.
--b, --batch_size	4	Batch size used to train neural network.
+-e, --epochs	1	
+-b, --batch_size	4	
 -l, --loss	cross_entropy	choices: ["mean_squared_error", "cross_entropy"]
 -o, --optimizer	sgd	choices: ["sgd", "momentum", "nag", "rmsprop", "adam", "nadam"]
--lr, --learning_rate	0.1	Learning rate used to optimize model parameters
--m, --momentum	0.5	Momentum used by momentum and nag optimizers.
+-lr, --learning_rate	0.1
+-m, --momentum	0.5	
 -beta, --beta	0.5	Beta used by rmsprop optimizer
 -beta1, --beta1	0.5	Beta1 used by adam and nadam optimizers.
 -beta2, --beta2	0.5	Beta2 used by adam and nadam optimizers.
