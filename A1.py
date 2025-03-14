@@ -167,7 +167,7 @@ class NN:
 			X=layer.fore_prop(X)
 		output = softmax(X) #softmax layer
 		return output
-	def back_prop(self, X,y #To start gradient calculation from the last layer
+	def back_prop(self, X,y): #To start gradient calculation from the last layer
 		output = self.fore_prop(X) #Input-Output layer propagated output
 		if self.loss_name == 'cross_entropy':
 			grad = output - y #For BCE loss, output - target = loss
