@@ -1,0 +1,6 @@
+numpy>=1.19.5
+pandas>=1.3.0 # Not used in implementation, but good to have for analysis
+tensorflow>=2.6.0  # To install keras solely in order to get dataset.
+matplotlib>=3.4.0  # In case any specific runtime plots are needed, not logged in wandb
+wandb>=0.12.0 # To log to wandb so as to include in report
+
