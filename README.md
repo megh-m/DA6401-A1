@@ -1,4 +1,5 @@
 # DA6401-A1
+All codes available at https://github.com/megh-m/DA6401-A1.git
 A1.py contains the classes Layer, NN & Optimizers. This model can run on SGD, MomentumGD, NAGD, RMSProp, Adam & NAdam optimizers.
 from A1.py import * to train.py. Save both in same directory.
 Use requirements.txt to get necessary packages. use pip install -r requirements.txt. 
